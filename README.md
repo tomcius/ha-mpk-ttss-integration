@@ -84,6 +84,18 @@ Wszystkie wynikają z samego API i żadnej nie da się obejść po stronie integ
 - API duplikuje każdy rekord; integracja deduplikuje je po `(godzina, linia, kierunek)`.
 - Odpytywanie co 60 s.
 
+## Logo
+
+`custom_components/mpk_ttss/brand/` zawiera `icon.png` (256×256, sam herb) i
+`logo.png` (192×128, pełne logo) w formacie wymaganym przez
+[home-assistant/brands](https://github.com/home-assistant/brands). Home Assistant
+serwuje ikony integracji wyłącznie z tamtego repozytorium, więc żeby pojawiły się
+w interfejsie, trzeba je tam zgłosić osobnym PR-em — obecność plików w tym repo
+sama z siebie ich nie wyświetli.
+
+Źródło: [mpk.krakow.pl](https://mpk.krakow.pl/images/logo.svg). Znak towarowy
+należy do MPK S.A. w Krakowie i jest użyty wyłącznie do identyfikacji integracji.
+
 ## Podziękowania
 
 API i dane: projekt [`jacekkow/mpk-ttss`](https://github.com/jacekkow/mpk-ttss).
