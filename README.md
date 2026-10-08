@@ -1,8 +1,11 @@
 # MPK Kraków (TTSS) — integracja Home Assistant
 
-Najbliższe odjazdy autobusów i tramwajów MPK Kraków, konfigurowane **w całości z UI**
-(bez YAML). Dane pochodzą z `api.ttss.pl` — backendu, na którym stoi
-[beta.ttss.pl](https://beta.ttss.pl/).
+Odjazdy autobusów i tramwajów MPK Kraków, konfigurowane **w całości z UI** (bez YAML).
+
+Dwa źródła naraz: `api.ttss.pl` (backend [beta.ttss.pl](https://beta.ttss.pl/)) daje
+rzeczywiste odjazdy na 30 minut naprzód, a oficjalny **GTFS** z
+[gtfs.ztp.krakow.pl](https://gtfs.ztp.krakow.pl) uzupełnia resztę doby z rozkładu.
+Każdy odjazd niesie flagę `realtime`, więc widać, co jest potwierdzone, a co planowane.
 
 ## Dlaczego nie istniejące integracje
 
@@ -44,9 +47,9 @@ z progami i warunkami numerycznymi w automatyzacjach.
 
 | Atrybut | Przykład |
 |---|---|
-| `departures` | `[{time: "17:50", line: "244", direction: "Nowy Bieżanów Południe", in_minutes: 11}, …]` |
+| `departures` | `[{time: "17:50", line: "244", direction: "…", in_minutes: 11, realtime: true}, …]` |
 | `next_two` | `"1. 11 min, 2. 35 min"` |
-| `by_line` | `{"224": [{time, in_minutes, direction}, …], "244": […]}` — po dwa najbliższe odjazdy każdej linii |
+| `by_line` | `{"224": [{time, in_minutes, direction, realtime}, …], "244": […]}` — po dwa najbliższe odjazdy każdej linii |
 | `directions` | `["Nowy Bieżanów Południe"]` — kierunki nadchodzących odjazdów |
 | `stop_id` | `"017269"` |
 | `stop_name` | `"Wieliczka Modrzewiowa"` |
@@ -68,12 +71,36 @@ tap_action:
   action: more-info
 ```
 
+## Rozkład z GTFS
+
+Realtime sięga 30 minut naprzód (zmierzone, patrz niżej), co dla linii kursującej co
+dwie godziny oznacza, że przez większość dnia jej nie widać. Dlatego integracja dociąga
+rozkład z oficjalnego feedu GTFS.
+
+**Jak to działa:** raz na dobę, w tle, pobierany jest archiwum GTFS i wyłuskiwane są
+z niego wiersze wyłącznie tego przystanku (oraz wybranych linii, jeśli ustawiono filtr).
+Rozkład uzupełnia listę **dopiero za ostatnim odjazdem znanym z realtime**, więc ten sam
+kurs nie pojawia się dwa razy, nawet gdy jego rzeczywisty czas odbiega od rozkładowego.
+Realtime zawsze ma pierwszeństwo.
+
+**Koszt:** archiwum autobusowe to ~20 MB, a `stop_times.txt` rozpakowuje się do ~137 MB —
+dlatego nie jest nigdzie zapisywany w całości, tylko strumieniowany, a zostają z niego
+dziesiątki kilobajtów. Ekstrakcja trwa ~3 s na szybkim komputerze; na Raspberry Pi
+należy się spodziewać kilkudziesięciu sekund. Dzieje się to w tle i nie blokuje
+odczytów — do czasu wczytania rozkładu encja pokazuje samo okno realtime. Jedno
+pobranie jest współdzielone przez wszystkie skonfigurowane przystanki.
+
+**Zweryfikowane:** rozkład linii 224 dla peronu 017269 wyliczony z GTFS
+(`06:08, 08:09, 10:19, 12:19, 14:19, 16:20, 18:19, 20:29, 22:30`) zgadza się co do minuty
+z rozkładem na `mpk.krakow.pl`. Kursy po północy (GTFS zapisuje je jako `24:07`)
+są mapowane na właściwy dzień.
+
 ## Ograniczenia
 
-Wszystkie wynikają z samego API i żadnej nie da się obejść po stronie integracji.
+Wszystkie wynikają ze źródeł danych i żadnej nie da się obejść po stronie integracji.
 
 - **Brak korekty czasu rzeczywistego.** API podaje tylko `time/line/direction` —
-  bez opóźnień. Minuty liczone są z rozkładowej godziny odjazdu.
+  bez pola opóźnienia. Minuty liczone są z podanej godziny odjazdu.
 - **Okno sięga 30 minut do przodu.** Zmierzone: 25 próbek co minutę na jednym słupku.
   Odjazd o 19:38 pojawił się w odpowiedzi dokładnie o 19:08 i ani chwili wcześniej.
   Serwer trzyma też odjazd ~9 minut *po* jego godzinie (19:08 był widoczny do 19:17).
@@ -110,7 +137,7 @@ Cena: odwołany kurs pozostanie widoczny do swojej godziny odjazdu — bez danyc
 rzeczywistego nie da się go odróżnić od kursu, który po prostu wypadł z odpowiedzi.
 Pamięć żyje w RAM i zeruje się przy restarcie Home Assistanta.
 
-Pełny rozkład dnia wymagałby statycznego GTFS-u z MPK — innego źródła niż to API.
+Poza oknem realtime tę rolę przejmuje GTFS (sekcja wyżej).
 
 ## Logo
 

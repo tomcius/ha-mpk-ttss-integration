@@ -4,9 +4,17 @@ DOMAIN = "mpk_ttss"
 
 API_BASE = "https://api.ttss.pl"
 
+# Official MPK static timetable, used to see beyond the realtime window.
+GTFS_BASE = "https://gtfs.ztp.krakow.pl"
+
 # TTSS splits its network into two independent datasets.
 TYPE_BUS = "b"
 TYPE_TRAM = "t"
+
+GTFS_URLS = {
+    TYPE_BUS: f"{GTFS_BASE}/GTFS_KRK_A.zip",
+    TYPE_TRAM: f"{GTFS_BASE}/GTFS_KRK_T.zip",
+}
 
 CONF_VEHICLE_TYPE = "vehicle_type"
 CONF_STOP_ID = "stop_id"

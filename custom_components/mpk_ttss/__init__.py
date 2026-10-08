@@ -7,12 +7,45 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+import asyncio
+from datetime import datetime, timedelta
+
 from .api import MpkTtssApi
 from .coordinator import MpkTtssCoordinator
+from .const import DOMAIN
+from .gtfs import async_download_feed
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
+# The archive is ~20 MB. Hold it only long enough for every configured stop to
+# extract its own rows from the same download, then let it go.
+FEED_CACHE_TTL = timedelta(minutes=10)
+
 MpkTtssConfigEntry = ConfigEntry[MpkTtssCoordinator]
+
+
+async def async_get_feed(hass: HomeAssistant, vehicle_type: str) -> bytes:
+    """Download the GTFS archive, sharing one download between stops."""
+    store = hass.data.setdefault(DOMAIN, {})
+    locks = store.setdefault("feed_locks", {})
+    lock = locks.setdefault(vehicle_type, asyncio.Lock())
+
+    async with lock:
+        cached = store.get(f"feed_{vehicle_type}")
+        if cached and datetime.now() - cached[0] < FEED_CACHE_TTL:
+            return cached[1]
+
+        payload = await async_download_feed(
+            async_get_clientsession(hass), vehicle_type
+        )
+        store[f"feed_{vehicle_type}"] = (datetime.now(), payload)
+
+        async def _drop() -> None:
+            await asyncio.sleep(FEED_CACHE_TTL.total_seconds())
+            store.pop(f"feed_{vehicle_type}", None)
+
+        hass.async_create_background_task(_drop(), f"{DOMAIN}_drop_feed")
+        return payload
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: MpkTtssConfigEntry) -> bool:

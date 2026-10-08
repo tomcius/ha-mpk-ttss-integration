@@ -43,6 +43,9 @@ class Departure:
     direction: str
     at: datetime
     in_minutes: int
+    # False for rows that come from the static timetable rather than the
+    # realtime window, which reaches only 30 minutes ahead.
+    realtime: bool = True
 
 
 class MpkTtssApi:

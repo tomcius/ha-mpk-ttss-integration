@@ -81,6 +81,7 @@ class MpkTtssDepartureSensor(CoordinatorEntity[MpkTtssCoordinator], SensorEntity
                     "line": departure.line,
                     "direction": departure.direction,
                     "in_minutes": departure.in_minutes,
+                    "realtime": departure.realtime,
                 }
                 for departure in departures
             ],
@@ -100,6 +101,7 @@ def _group_by_line(departures: list[Any]) -> dict[str, list[dict[str, Any]]]:
                     "time": departure.time,
                     "in_minutes": departure.in_minutes,
                     "direction": departure.direction,
+                    "realtime": departure.realtime,
                 }
             )
     return grouped
