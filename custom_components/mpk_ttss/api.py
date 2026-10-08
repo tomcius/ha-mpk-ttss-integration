@@ -116,9 +116,19 @@ class MpkTtssApi:
         return matches[:limit]
 
     async def async_get_departures(
-        self, vehicle_type: str, stop_id: str, lines: list[str] | None = None
+        self,
+        vehicle_type: str,
+        stop_id: str,
+        lines: list[str] | None = None,
+        include_departed: bool = False,
     ) -> list[Departure]:
-        """Return deduplicated upcoming departures, soonest first."""
+        """Return deduplicated departures, soonest first.
+
+        With include_departed the already-left ones are kept too, which is how
+        the full set of lines and directions a stop serves is discovered: a
+        stop point can serve several directions, and asking only about future
+        departures gives whatever happens to be due in the next few minutes.
+        """
         payload = await self._get_json(
             "/schedule/", {"type": vehicle_type, "id": stop_id}
         )
@@ -150,7 +160,7 @@ class MpkTtssApi:
                 continue
 
             in_minutes = int((at - now).total_seconds() // 60)
-            if in_minutes < 0:
+            if in_minutes < 0 and not include_departed:
                 continue
 
             departures.append(

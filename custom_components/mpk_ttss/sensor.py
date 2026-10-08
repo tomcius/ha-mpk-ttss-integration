@@ -13,10 +13,10 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from . import MpkTtssConfigEntry
 from .const import (
     ATTR_DEPARTURES,
+    ATTR_DIRECTIONS,
     ATTR_NEXT_TWO,
     ATTR_STOP_ID,
     ATTR_STOP_NAME,
-    CONF_DIRECTION,
     DOMAIN,
     TYPE_TRAM,
 )
@@ -71,7 +71,9 @@ class MpkTtssDepartureSensor(CoordinatorEntity[MpkTtssCoordinator], SensorEntity
         return {
             ATTR_STOP_ID: self.coordinator.stop_id,
             ATTR_STOP_NAME: self.coordinator.stop_name,
-            CONF_DIRECTION: self.config_entry_direction,
+            ATTR_DIRECTIONS: sorted(
+                {departure.direction for departure in departures if departure.direction}
+            ),
             ATTR_DEPARTURES: [
                 {
                     "time": departure.time,
@@ -83,10 +85,6 @@ class MpkTtssDepartureSensor(CoordinatorEntity[MpkTtssCoordinator], SensorEntity
             ],
             ATTR_NEXT_TWO: _format_next_two(departures),
         }
-
-    @property
-    def config_entry_direction(self) -> str:
-        return self.coordinator.config_entry.data.get(CONF_DIRECTION, "")
 
 
 def _format_next_two(departures: list[Any]) -> str:

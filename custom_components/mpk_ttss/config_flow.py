@@ -25,7 +25,6 @@ from homeassistant.helpers.selector import (
 
 from .api import MpkTtssApi, MpkTtssError, Stop
 from .const import (
-    CONF_DIRECTION,
     CONF_LINES,
     CONF_QUERY,
     CONF_STOP_ID,
@@ -156,19 +155,17 @@ class MpkTtssConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             lines = _normalise_lines(user_input.get(CONF_LINES))
-            direction = self._directions.get(self._stop.id, "")
             return self.async_create_entry(
                 title=self._title_for(self._stop),
                 data={
                     CONF_VEHICLE_TYPE: self._vehicle_type,
                     CONF_STOP_ID: self._stop.id,
                     CONF_STOP_NAME: self._stop.name,
-                    CONF_DIRECTION: direction,
                 },
                 options={CONF_LINES: lines},
             )
 
-        available = await self._async_available_lines(self._stop.id)
+        available = await self._async_available_lines(self._stop)
         return self.async_show_form(
             step_id="lines",
             data_schema=vol.Schema(
@@ -184,15 +181,20 @@ class MpkTtssConfigFlow(ConfigFlow, domain=DOMAIN):
         return f"{stop.name}  [{stop.id}]"
 
     def _title_for(self, stop: Stop) -> str:
-        direction = self._directions.get(stop.id)
-        if direction:
-            return f"{stop.name} → {direction}"
+        # Deliberately no direction here. The API only exposes a narrow window
+        # of imminent departures, so the directions known at setup time are a
+        # snapshot - baking one into the entity name would mislabel the stop
+        # for the rest of the day.
         return f"{stop.name} ({stop.id})"
 
     async def _async_lookup_directions(self, stops: list[Stop]) -> dict[str, str]:
-        """Resolve each candidate's direction so poles can be told apart.
+        """Resolve which directions each candidate serves, so poles can be told apart.
 
-        Best-effort: a stop with no departures right now (e.g. at night) simply
+        A stop point often serves more than one direction, so every direction in
+        the window is collected and sorted - picking the next departure's one
+        would make the label depend on the minute the flow happened to run.
+
+        Best-effort: a stop with no departures at all (e.g. late at night) simply
         gets no direction label rather than blocking the flow.
         """
         candidates = stops[:MAX_DIRECTION_LOOKUPS]
@@ -200,10 +202,13 @@ class MpkTtssConfigFlow(ConfigFlow, domain=DOMAIN):
 
         async def one(stop: Stop) -> tuple[str, str]:
             try:
-                departures = await api.async_get_departures(self._vehicle_type, stop.id)
+                departures = await api.async_get_departures(
+                    self._vehicle_type, stop.id, include_departed=True
+                )
             except MpkTtssError:
                 return stop.id, ""
-            return stop.id, departures[0].direction if departures else ""
+            directions = sorted({d.direction for d in departures if d.direction})
+            return stop.id, " / ".join(directions)
 
         try:
             async with asyncio.timeout(DIRECTION_LOOKUP_TIMEOUT):
@@ -221,15 +226,26 @@ class MpkTtssConfigFlow(ConfigFlow, domain=DOMAIN):
             if direction
         }
 
-    async def _async_available_lines(self, stop_id: str) -> list[str]:
-        """Lines seen in the upcoming departures, used to prefill the picker."""
-        try:
-            departures = await self._api.async_get_departures(
-                self._vehicle_type, stop_id
-            )
-        except MpkTtssError:
-            return []
-        return sorted({departure.line for departure in departures if departure.line})
+    async def _async_available_lines(self, stop: Stop) -> list[str]:
+        """Lines to prefill the picker with.
+
+        The per-pole window is often a single departure, so the stop group is
+        queried as well. That is a superset - a group spans both sides of the
+        street - but an over-broad hint beats an empty one, and the picker
+        accepts hand-typed values anyway.
+        """
+        api = self._api
+        ids = [stop.id] + ([stop.parent] if stop.parent else [])
+        lines: set[str] = set()
+        for stop_id in ids:
+            try:
+                departures = await api.async_get_departures(
+                    self._vehicle_type, stop_id, include_departed=True
+                )
+            except MpkTtssError:
+                continue
+            lines.update(d.line for d in departures if d.line)
+        return sorted(lines)
 
     @staticmethod
     @callback
@@ -252,7 +268,9 @@ class MpkTtssOptionsFlow(OptionsFlow):
         api = MpkTtssApi(async_get_clientsession(self.hass))
         try:
             departures = await api.async_get_departures(
-                entry.data[CONF_VEHICLE_TYPE], entry.data[CONF_STOP_ID]
+                entry.data[CONF_VEHICLE_TYPE],
+                entry.data[CONF_STOP_ID],
+                include_departed=True,
             )
         except MpkTtssError:
             available: list[str] = []
