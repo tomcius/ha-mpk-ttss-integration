@@ -20,6 +20,7 @@ DEFAULT_SCAN_INTERVAL = 60
 # rather than as a bus that already left.
 MIDNIGHT_ROLLOVER_GRACE_MINUTES = 90
 
+ATTR_BY_LINE = "by_line"
 ATTR_DEPARTURES = "departures"
 ATTR_DIRECTIONS = "directions"
 ATTR_NEXT_TWO = "next_two"

@@ -12,6 +12,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import MpkTtssConfigEntry
 from .const import (
+    ATTR_BY_LINE,
     ATTR_DEPARTURES,
     ATTR_DIRECTIONS,
     ATTR_NEXT_TWO,
@@ -84,7 +85,24 @@ class MpkTtssDepartureSensor(CoordinatorEntity[MpkTtssCoordinator], SensorEntity
                 for departure in departures
             ],
             ATTR_NEXT_TWO: _format_next_two(departures),
+            ATTR_BY_LINE: _group_by_line(departures),
         }
+
+
+def _group_by_line(departures: list[Any]) -> dict[str, list[dict[str, Any]]]:
+    """The next two departures of each line, keyed by line number."""
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for departure in departures:
+        entries = grouped.setdefault(departure.line, [])
+        if len(entries) < 2:
+            entries.append(
+                {
+                    "time": departure.time,
+                    "in_minutes": departure.in_minutes,
+                    "direction": departure.direction,
+                }
+            )
+    return grouped
 
 
 def _format_next_two(departures: list[Any]) -> str:

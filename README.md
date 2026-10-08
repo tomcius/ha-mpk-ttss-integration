@@ -46,6 +46,7 @@ z progami i warunkami numerycznymi w automatyzacjach.
 |---|---|
 | `departures` | `[{time: "17:50", line: "244", direction: "Nowy Bieżanów Południe", in_minutes: 11}, …]` |
 | `next_two` | `"1. 11 min, 2. 35 min"` |
+| `by_line` | `{"224": [{time, in_minutes, direction}, …], "244": […]}` — po dwa najbliższe odjazdy każdej linii |
 | `directions` | `["Nowy Bieżanów Południe"]` — kierunki nadchodzących odjazdów |
 | `stop_id` | `"017269"` |
 | `stop_name` | `"Wieliczka Modrzewiowa"` |
@@ -56,7 +57,11 @@ z progami i warunkami numerycznymi w automatyzacjach.
 type: custom:mushroom-template-card
 entity: sensor.wieliczka_modrzewiowa_017269
 primary: Wieliczka Modrzewiowa
-secondary: "{{ state_attr(entity, 'next_two') }}"
+secondary: >-
+  {% for line, deps in (state_attr(entity, 'by_line') or {}).items() %}
+  {{ line }}: {{ deps | map(attribute='in_minutes') | join(', ') }} min
+  {%- if not loop.last %} · {% endif %}
+  {% else %}brak odjazdów{% endfor %}
 icon: mdi:bus
 icon_color: "{{ 'red' if states(entity) | int(99) < 5 else 'green' }}"
 tap_action:
@@ -74,8 +79,13 @@ Wszystkie wynikają z samego API i żadnej nie da się obejść po stronie integ
   już tylko 244 — nie dlatego, że 224 tam nie jeździ, ale dlatego, że wypadła z okna.
 - **Nie istnieje endpoint z liniami przystanku** (`/lines/`, `/stopinfo/`, `/routes/`
   zwracają 404), więc pełnej listy linii obsługujących słupek nie można pobrać.
-  Podpowiedzi w filtrze linii pochodzą ze słupka **i z grupy przystanków**, czyli są
-  nadzbiorem — mogą zawierać linię, która zatrzymuje się po drugiej stronie ulicy.
+  Podpowiedzi w filtrze linii pochodzą wyłącznie z bieżącego okna i bywają niepełne —
+  dlatego pole przyjmuje też numery wpisane ręcznie.
+- **Pole `parent` nie jest grupą przystanku**, mimo że tak wygląda. To tylko prefiks
+  numeru: pod `0172` znajduje się 18 słupków o 9 różnych nazwach (Krokusowa, Łagiewniki
+  SKA, kilka przystanków w Wieliczce), oddalonych o kilometry. Numery tych wpisów
+  zbiorczych nie są nawet unikalne. Odpytywanie ich zwraca odjazdy z niepowiązanych
+  przystanków, więc integracja pyta wyłącznie o wybrany słupek.
 - **Kierunek nie jest trwałą cechą słupka** — jeden słupek bywa obsługiwany w kilku
   kierunkach (`017269` to 224 → *Centrum JP II* oraz 244 → *Nowy Bieżanów Południe*).
   Dlatego nazwa encji zawiera numer słupka, a nie kierunek: kierunek znany w chwili
@@ -83,6 +93,17 @@ Wszystkie wynikają z samego API i żadnej nie da się obejść po stronie integ
   w atrybucie `directions`.
 - API duplikuje każdy rekord; integracja deduplikuje je po `(godzina, linia, kierunek)`.
 - Odpytywanie co 60 s.
+
+### Pamięć odjazdów
+
+Ponieważ okno jest wąskie, rzadsza linia potrafi zniknąć z odpowiedzi i wrócić po
+chwili. Integracja pamięta odjazdy, które już zobaczyła, i trzyma je do czasu, aż
+faktycznie miną — dzięki temu `by_line` stopniowo wypełnia się wszystkimi liniami
+słupka, zamiast pokazywać tylko tę, która akurat trafiła w okno.
+
+Cena jest taka, że odwołany kurs pozostanie widoczny do swojej godziny odjazdu.
+Bez danych czasu rzeczywistego nie da się go odróżnić od kursu, który tylko wypadł
+z okna. Pamięć żyje w RAM i zeruje się przy restarcie Home Assistanta.
 
 ## Logo
 

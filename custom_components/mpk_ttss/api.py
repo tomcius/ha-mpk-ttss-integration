@@ -90,13 +90,6 @@ class MpkTtssApi:
         self._stops_cache[vehicle_type] = (dt_util.utcnow(), stops)
         return stops
 
-    async def async_find_stop(self, vehicle_type: str, stop_id: str) -> Stop | None:
-        """Return a single stop by exact id, or None when it does not exist."""
-        for stop in await self.async_get_stops(vehicle_type):
-            if stop.id == stop_id:
-                return stop
-        return None
-
     async def async_search_stops(
         self, vehicle_type: str, query: str, limit: int = 25
     ) -> list[Stop]:
@@ -108,8 +101,9 @@ class MpkTtssApi:
         matches = [
             stop
             for stop in await self.async_get_stops(vehicle_type)
-            # A parent entry is the stop group; we only offer individual poles,
-            # because a group mixes both travel directions together.
+            # Entries without a parent are aggregate rows, not physical poles:
+            # their ids are not unique (eight different places share "0172")
+            # and querying one returns departures from unrelated stops.
             if stop.parent is not None and needle in stop.name.casefold()
         ]
         matches.sort(key=lambda stop: (stop.name.casefold(), stop.id))

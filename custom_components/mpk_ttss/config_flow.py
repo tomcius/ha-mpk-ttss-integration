@@ -229,23 +229,19 @@ class MpkTtssConfigFlow(ConfigFlow, domain=DOMAIN):
     async def _async_available_lines(self, stop: Stop) -> list[str]:
         """Lines to prefill the picker with.
 
-        The per-pole window is often a single departure, so the stop group is
-        queried as well. That is a superset - a group spans both sides of the
-        street - but an over-broad hint beats an empty one, and the picker
-        accepts hand-typed values anyway.
+        Only this pole is asked. The `parent` field looks like a stop group but
+        is merely the id prefix - "0172" spans nine differently named stops
+        kilometres apart - so widening the query there would suggest lines that
+        do not serve this stop at all. The window is narrow, so the hint may be
+        incomplete; the picker accepts hand-typed values for that reason.
         """
-        api = self._api
-        ids = [stop.id] + ([stop.parent] if stop.parent else [])
-        lines: set[str] = set()
-        for stop_id in ids:
-            try:
-                departures = await api.async_get_departures(
-                    self._vehicle_type, stop_id, include_departed=True
-                )
-            except MpkTtssError:
-                continue
-            lines.update(d.line for d in departures if d.line)
-        return sorted(lines)
+        try:
+            departures = await self._api.async_get_departures(
+                self._vehicle_type, stop.id, include_departed=True
+            )
+        except MpkTtssError:
+            return []
+        return sorted({d.line for d in departures if d.line})
 
     @staticmethod
     @callback
