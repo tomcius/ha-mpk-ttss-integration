@@ -74,9 +74,11 @@ Wszystkie wynikają z samego API i żadnej nie da się obejść po stronie integ
 
 - **Brak korekty czasu rzeczywistego.** API podaje tylko `time/line/direction` —
   bez opóźnień. Minuty liczone są z rozkładowej godziny odjazdu.
-- **Okno jest wąskie i przesuwa się.** Serwer zwraca zwykle 1–3 najbliższe odjazdy,
-  nie dzienny rozkład. Ten sam słupek o 18:28 pokazywał linie 224 i 244, a o 18:32
-  już tylko 244 — nie dlatego, że 224 tam nie jeździ, ale dlatego, że wypadła z okna.
+- **Okno sięga 30 minut do przodu.** Zmierzone: 25 próbek co minutę na jednym słupku.
+  Odjazd o 19:38 pojawił się w odpowiedzi dokładnie o 19:08 i ani chwili wcześniej.
+  Serwer trzyma też odjazd ~9 minut *po* jego godzinie (19:08 był widoczny do 19:17).
+  Przy kursach co pół godziny oznacza to 1–2 pozycje w odpowiedzi — i linię, która
+  jeździ rzadziej, widać dopiero na pół godziny przed odjazdem.
 - **Nie istnieje endpoint z liniami przystanku** (`/lines/`, `/stopinfo/`, `/routes/`
   zwracają 404), więc pełnej listy linii obsługujących słupek nie można pobrać.
   Podpowiedzi w filtrze linii pochodzą wyłącznie z bieżącego okna i bywają niepełne —
@@ -96,14 +98,19 @@ Wszystkie wynikają z samego API i żadnej nie da się obejść po stronie integ
 
 ### Pamięć odjazdów
 
-Ponieważ okno jest wąskie, rzadsza linia potrafi zniknąć z odpowiedzi i wrócić po
-chwili. Integracja pamięta odjazdy, które już zobaczyła, i trzyma je do czasu, aż
-faktycznie miną — dzięki temu `by_line` stopniowo wypełnia się wszystkimi liniami
-słupka, zamiast pokazywać tylko tę, która akurat trafiła w okno.
+Integracja pamięta odjazdy, które już zobaczyła, i trzyma je do czasu, aż miną.
 
-Cena jest taka, że odwołany kurs pozostanie widoczny do swojej godziny odjazdu.
-Bez danych czasu rzeczywistego nie da się go odróżnić od kursu, który tylko wypadł
-z okna. Pamięć żyje w RAM i zeruje się przy restarcie Home Assistanta.
+**Nie rozszerza to 30-minutowego horyzontu** — pomiar pokazał, że serwer utrzymuje
+odjazd w odpowiedzi nieprzerwanie od chwili, gdy wejdzie w okno, aż do kilku minut po
+godzinie odjazdu, więc w normalnych warunkach nie ma czego ratować. Pamięć zabezpiecza
+przed chwilowym zniknięciem pozycji z odpowiedzi; linii, której kurs jest odleglejszy
+niż pół godziny, nie pokaże, bo API nigdy jej nie podało.
+
+Cena: odwołany kurs pozostanie widoczny do swojej godziny odjazdu — bez danych czasu
+rzeczywistego nie da się go odróżnić od kursu, który po prostu wypadł z odpowiedzi.
+Pamięć żyje w RAM i zeruje się przy restarcie Home Assistanta.
+
+Pełny rozkład dnia wymagałby statycznego GTFS-u z MPK — innego źródła niż to API.
 
 ## Logo
 
