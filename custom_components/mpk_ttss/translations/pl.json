@@ -1,0 +1,42 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "MPK Kraków — rodzaj pojazdu",
+        "description": "TTSS trzyma autobusy i tramwaje w osobnych zbiorach danych.",
+        "data": { "vehicle_type": "Rodzaj pojazdu" }
+      },
+      "search": {
+        "title": "Znajdź przystanek",
+        "description": "Wpisz fragment nazwy, np. „Wieliczka Modrz” albo „Kopalnia”.",
+        "data": { "query": "Nazwa przystanku" }
+      },
+      "select": {
+        "title": "Wybierz słupek",
+        "description": "Każdy słupek to jeden kierunek jazdy. Strzałka pokazuje, gdzie jadą autobusy z tego słupka.",
+        "data": { "stop_id": "Przystanek" }
+      },
+      "lines": {
+        "title": "Filtr linii",
+        "description": "Przystanek: {stop}. Zostaw puste, aby pokazywać wszystkie linie.",
+        "data": { "lines": "Linie" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nie udało się połączyć z api.ttss.pl.",
+      "no_results": "Brak przystanków o takiej nazwie. Spróbuj krótszego fragmentu."
+    },
+    "abort": {
+      "already_configured": "Ten słupek jest już dodany."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Filtr linii",
+        "description": "Zostaw puste, aby pokazywać wszystkie linie.",
+        "data": { "lines": "Linie" }
+      }
+    }
+  }
+}

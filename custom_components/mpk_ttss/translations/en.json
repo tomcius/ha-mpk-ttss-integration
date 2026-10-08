@@ -1,0 +1,42 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "MPK Kraków — vehicle type",
+        "description": "TTSS keeps buses and trams in separate datasets.",
+        "data": { "vehicle_type": "Vehicle type" }
+      },
+      "search": {
+        "title": "Find a stop",
+        "description": "Type part of the name, e.g. \"Wieliczka Modrz\" or \"Kopalnia\".",
+        "data": { "query": "Stop name" }
+      },
+      "select": {
+        "title": "Pick a stop point",
+        "description": "Each stop point is one travel direction. The arrow shows where vehicles from it are heading.",
+        "data": { "stop_id": "Stop" }
+      },
+      "lines": {
+        "title": "Line filter",
+        "description": "Stop: {stop}. Leave empty to show all lines.",
+        "data": { "lines": "Lines" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach api.ttss.pl.",
+      "no_results": "No stop matches that name. Try a shorter fragment."
+    },
+    "abort": {
+      "already_configured": "This stop point is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Line filter",
+        "description": "Leave empty to show all lines.",
+        "data": { "lines": "Lines" }
+      }
+    }
+  }
+}

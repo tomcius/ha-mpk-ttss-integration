@@ -1,0 +1,11 @@
+{
+  "domain": "mpk_ttss",
+  "name": "MPK Kraków (TTSS)",
+  "codeowners": ["@tomcius"],
+  "config_flow": true,
+  "documentation": "https://github.com/tomcius/ha-mpk-ttss-integration",
+  "issue_tracker": "https://github.com/tomcius/ha-mpk-ttss-integration/issues",
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "version": "0.1.0"
+}
