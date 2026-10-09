@@ -7,6 +7,24 @@ rzeczywiste odjazdy na 30 minut naprzód, a oficjalny **GTFS** z
 [gtfs.ztp.krakow.pl](https://gtfs.ztp.krakow.pl) uzupełnia resztę doby z rozkładu.
 Każdy odjazd niesie flagę `realtime`, więc widać, co jest potwierdzone, a co planowane.
 
+## Jak to wygląda
+
+<img src="docs/panel-kafelki.png" alt="Kafelki z najbliższymi odjazdami" width="420">
+
+Kafelek na kierunek, w każdym najbliższe odjazdy rozbite na linie. Kolor ikony
+to czas do odjazdu (czerwony < 5 min, pomarańczowy < 15), zielona plakietka —
+odjazd potwierdzony w czasie rzeczywistym.
+
+<img src="docs/panel-rozklad.png" alt="Pełny rozkład dnia w układzie przystankowym" width="420">
+
+Kliknięcie otwiera pełny rozkład doby w układzie jak na tabliczce przystankowej:
+godzina w wierszu, minuty obok. Pogrubione to kursy jeszcze przed nami, kropka
+oznacza czas rzeczywisty. Widać tu, po co jest GTFS — linia 224 kursuje co dwie
+godziny, więc w 30-minutowym oknie realtime byłaby niewidoczna przez większość
+dnia.
+
+Szablony tych kart są niżej, w [Przykład karty](#przykład-karty).
+
 ## Dlaczego nie istniejące integracje
 
 Dostępne komponenty MPK-KR odpytują `ttss.mpk.krakow.pl/internetservice`, które
