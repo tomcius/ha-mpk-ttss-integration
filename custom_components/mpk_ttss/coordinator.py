@@ -60,6 +60,17 @@ class MpkTtssCoordinator(DataUpdateCoordinator[list[Departure]]):
             return [part.strip() for part in raw.split(",") if part.strip()]
         return list(raw)
 
+    @property
+    def timetable(self) -> list[Departure]:
+        """Whole service day from the timetable, including departures already gone.
+
+        `data` carries what is still catchable; this is the printed timetable,
+        so a stop can show its full day the way the operator publishes it.
+        Empty until the background load finishes, and narrowed to the configured
+        lines like everything else.
+        """
+        return self._schedule
+
     async def _async_update_data(self) -> list[Departure]:
         try:
             fresh = await self.api.async_get_departures(

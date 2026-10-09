@@ -18,6 +18,7 @@ from .const import (
     ATTR_NEXT_TWO,
     ATTR_STOP_ID,
     ATTR_STOP_NAME,
+    ATTR_TIMETABLE,
     DOMAIN,
     TYPE_TRAM,
 )
@@ -87,6 +88,14 @@ class MpkTtssDepartureSensor(CoordinatorEntity[MpkTtssCoordinator], SensorEntity
             ],
             ATTR_NEXT_TWO: _format_next_two(departures),
             ATTR_BY_LINE: _group_by_line(departures),
+            ATTR_TIMETABLE: [
+                {
+                    "time": departure.time,
+                    "line": departure.line,
+                    "direction": departure.direction,
+                }
+                for departure in self.coordinator.timetable
+            ],
         }
 
 

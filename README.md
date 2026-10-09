@@ -51,6 +51,7 @@ z progami i warunkami numerycznymi w automatyzacjach.
 | `next_two` | `"1. 11 min, 2. 35 min"` |
 | `by_line` | `{"224": [{time, in_minutes, direction, realtime}, …], "244": […]}` — po dwa najbliższe odjazdy każdej linii |
 | `directions` | `["Nowy Bieżanów Południe"]` — kierunki nadchodzących odjazdów |
+| `timetable` | `[{time, line, direction}, …]` — **cała doba** z rozkładu, łącznie z kursami, które już odjechały |
 | `stop_id` | `"017269"` |
 | `stop_name` | `"Wieliczka Modrzewiowa"` |
 
@@ -89,6 +90,9 @@ dziesiątki kilobajtów. Ekstrakcja trwa ~3 s na szybkim komputerze; na Raspberr
 należy się spodziewać kilkudziesięciu sekund. Dzieje się to w tle i nie blokuje
 odczytów — do czasu wczytania rozkładu encja pokazuje samo okno realtime. Jedno
 pobranie jest współdzielone przez wszystkie skonfigurowane przystanki.
+
+Atrybut `departures` zawiera to, co da się jeszcze złapać; `timetable` — pełny dzień
+tak, jak publikuje go przewoźnik. Oba są zawężone filtrem linii.
 
 **Zweryfikowane:** rozkład linii 224 dla peronu 017269 wyliczony z GTFS
 (`06:08, 08:09, 10:19, 12:19, 14:19, 16:20, 18:19, 20:29, 22:30`) zgadza się co do minuty
